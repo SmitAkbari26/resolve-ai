@@ -1,0 +1,229 @@
+{
+  "scenarios": [
+    {
+      "scenario": "Refund Request - Duplicate Charge",
+      "query": "I was charged twice for my subscription.",
+      "expected_category": "billing",
+      "expected_action": "create_refund_ticket",
+      "severity": "P2",
+      "requires_approval": true,
+      "assigned_team": "Finance Support Team"
+    },
+    {
+      "scenario": "Failed Payment Processing",
+      "query": "My payment failed but money was deducted from my account.",
+      "expected_category": "billing",
+      "expected_action": "create_payment_investigation_ticket",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Finance Support Team"
+    },
+    {
+      "scenario": "Invoice Missing",
+      "query": "I cannot find my invoice for last month.",
+      "expected_category": "billing",
+      "expected_action": "generate_invoice_support_ticket",
+      "severity": "P3",
+      "requires_approval": false,
+      "assigned_team": "Finance Support Team"
+    },
+    {
+      "scenario": "Enterprise Refund Escalation",
+      "query": "We need a refund for our enterprise subscription due to downtime.",
+      "expected_category": "enterprise",
+      "expected_action": "escalate_refund_approval",
+      "severity": "P1",
+      "requires_approval": true,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "Slack Integration Failure",
+      "query": "Slack integration stopped syncing messages.",
+      "expected_category": "integration",
+      "expected_action": "troubleshooting",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "Slack OAuth Failure",
+      "query": "I am getting OAuth permission errors while connecting Slack.",
+      "expected_category": "integration",
+      "expected_action": "oauth_reconnect_guidance",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "Jira Sync Delay",
+      "query": "Jira tickets are not syncing properly with FlowSync.",
+      "expected_category": "integration",
+      "expected_action": "integration_diagnostics",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "GitHub Webhook Failure",
+      "query": "GitHub pull request events are missing in FlowSync.",
+      "expected_category": "integration",
+      "expected_action": "webhook_validation",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "Google Drive File Sync Failure",
+      "query": "My Google Drive files are not syncing.",
+      "expected_category": "integration",
+      "expected_action": "file_sync_troubleshooting",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "Microsoft Teams Bot Failure",
+      "query": "The Teams bot is not responding in our workspace.",
+      "expected_category": "integration",
+      "expected_action": "bot_diagnostics",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Platform Integration Team"
+    },
+    {
+      "scenario": "Login Failure",
+      "query": "I cannot log into my account even with correct credentials.",
+      "expected_category": "authentication",
+      "expected_action": "authentication_troubleshooting",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Identity & Security Team"
+    },
+    {
+      "scenario": "MFA Verification Failure",
+      "query": "My MFA code is not working.",
+      "expected_category": "authentication",
+      "expected_action": "mfa_recovery_flow",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Identity & Security Team"
+    },
+    {
+      "scenario": "Account Locked",
+      "query": "My account got locked after multiple login attempts.",
+      "expected_category": "authentication",
+      "expected_action": "account_unlock_workflow",
+      "severity": "P2",
+      "requires_approval": true,
+      "assigned_team": "Identity & Security Team"
+    },
+    {
+      "scenario": "Password Reset Failure",
+      "query": "The password reset email never arrived.",
+      "expected_category": "authentication",
+      "expected_action": "password_reset_assistance",
+      "severity": "P3",
+      "requires_approval": false,
+      "assigned_team": "Identity & Security Team"
+    },
+    {
+      "scenario": "Dashboard Not Loading",
+      "query": "The analytics dashboard is stuck on loading.",
+      "expected_category": "technical",
+      "expected_action": "technical_investigation",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Engineering Team"
+    },
+    {
+      "scenario": "API Timeout Error",
+      "query": "Our API requests keep timing out.",
+      "expected_category": "technical",
+      "expected_action": "api_timeout_diagnostics",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Engineering Team"
+    },
+    {
+      "scenario": "Performance Degradation",
+      "query": "The platform has become extremely slow today.",
+      "expected_category": "technical",
+      "expected_action": "performance_investigation",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Engineering Team"
+    },
+    {
+      "scenario": "File Upload Failure",
+      "query": "Large files fail to upload to the platform.",
+      "expected_category": "technical",
+      "expected_action": "upload_diagnostics",
+      "severity": "P2",
+      "requires_approval": false,
+      "assigned_team": "Engineering Team"
+    },
+    {
+      "scenario": "System Outage Detection",
+      "query": "Nobody in our company can access FlowSync.",
+      "expected_category": "enterprise",
+      "expected_action": "incident_escalation",
+      "severity": "P0",
+      "requires_approval": true,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "SLA Breach Complaint",
+      "query": "Your downtime violated our enterprise SLA agreement.",
+      "expected_category": "enterprise",
+      "expected_action": "sla_escalation_workflow",
+      "severity": "P1",
+      "requires_approval": true,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "Permission Access Issue",
+      "query": "Some team members lost access to project resources.",
+      "expected_category": "enterprise",
+      "expected_action": "permission_investigation",
+      "severity": "P1",
+      "requires_approval": false,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "Data Export Request",
+      "query": "I want to export all my account data.",
+      "expected_category": "enterprise",
+      "expected_action": "data_export_workflow",
+      "severity": "P2",
+      "requires_approval": true,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "Account Deletion Request",
+      "query": "Please permanently delete my account and all related data.",
+      "expected_category": "enterprise",
+      "expected_action": "gdpr_deletion_workflow",
+      "severity": "P1",
+      "requires_approval": true,
+      "assigned_team": "Enterprise Support Team"
+    },
+    {
+      "scenario": "Feature Usage Guidance",
+      "query": "How do I create a new project workspace?",
+      "expected_category": "general",
+      "expected_action": "feature_usage_guidance",
+      "severity": "P3",
+      "requires_approval": false,
+      "assigned_team": "Customer Support Team"
+    },
+    {
+      "scenario": "Task Assignment Help",
+      "query": "How can I assign tasks to my team members?",
+      "expected_category": "general",
+      "expected_action": "feature_usage_guidance",
+      "severity": "P3",
+      "requires_approval": false,
+      "assigned_team": "Customer Support Team"
+    }
+  ]
+}

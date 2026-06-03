@@ -1,0 +1,339 @@
+{
+  "workflow_name": "flowsync_ticket_workflow",
+
+  "ticket_states": [
+    "OPEN",
+    "CLASSIFIED",
+    "ASSIGNED",
+    "IN_PROGRESS",
+    "WAITING_FOR_USER",
+    "RESOLVED",
+    "CLOSED",
+    "REOPENED"
+  ],
+
+  "agents": {
+    "conversation_agent": {
+      "responsibilities": [
+        "extract_user_intent",
+        "maintain_conversation_context",
+        "collect_missing_information"
+      ]
+    },
+
+    "classification_agent": {
+      "responsibilities": [
+        "assign_category",
+        "assign_severity",
+        "detect_priority",
+        "identify_customer_tier"
+      ]
+    },
+
+    "retrieval_agent": {
+      "responsibilities": [
+        "retrieve_relevant_documents",
+        "fetch_policy_information",
+        "fetch_historical_ticket_context",
+        "provide_rag_context"
+      ]
+    },
+
+    "decision_agent": {
+      "responsibilities": [
+        "decide_next_action",
+        "determine_escalation",
+        "determine_human_approval_requirement",
+        "detect_sla_risk",
+        "choose_resolution_strategy"
+      ]
+    },
+
+    "ticket_agent": {
+      "responsibilities": [
+        "create_ticket",
+        "update_ticket",
+        "change_ticket_state",
+        "assign_team",
+        "store_ticket_logs"
+      ]
+    },
+
+    "escalation_agent": {
+      "responsibilities": [
+        "handle_p0_incidents",
+        "trigger_engineering_escalation",
+        "notify_enterprise_support",
+        "manage_incident_workflow"
+      ]
+    },
+
+    "notification_agent": {
+      "responsibilities": [
+        "send_customer_updates",
+        "notify_internal_teams",
+        "send_sla_alerts",
+        "send_approval_requests"
+      ]
+    }
+  },
+
+  "workflow": [
+    {
+      "step": 1,
+      "name": "receive_customer_query",
+      "input": [
+        "customer_message"
+      ],
+      "agent": "conversation_agent",
+      "output": [
+        "intent",
+        "conversation_context",
+        "entities"
+      ],
+      "next_step": 2
+    },
+
+    {
+      "step": 2,
+      "name": "classify_ticket",
+      "agent": "classification_agent",
+      "input": [
+        "intent",
+        "conversation_context"
+      ],
+      "output": [
+        "category",
+        "severity",
+        "priority",
+        "customer_tier"
+      ],
+      "next_step": 3
+    },
+
+    {
+      "step": 3,
+      "name": "retrieve_context",
+      "agent": "retrieval_agent",
+      "input": [
+        "category",
+        "intent",
+        "entities"
+      ],
+      "output": [
+        "retrieved_documents",
+        "policy_context",
+        "historical_context"
+      ],
+      "next_step": 4
+    },
+
+    {
+      "step": 4,
+      "name": "decision_analysis",
+      "agent": "decision_agent",
+      "input": [
+        "severity",
+        "category",
+        "policy_context",
+        "customer_tier"
+      ],
+      "output": [
+        "action",
+        "requires_human_approval",
+        "requires_escalation",
+        "sla_risk"
+      ],
+      "next_step_conditions": {
+        "requires_escalation=true": 5,
+        "requires_human_approval=true": 6,
+        "default": 7
+      }
+    },
+
+    {
+      "step": 5,
+      "name": "escalate_ticket",
+      "agent": "escalation_agent",
+      "input": [
+        "ticket_data",
+        "severity",
+        "sla_risk"
+      ],
+      "output": [
+        "escalation_status",
+        "assigned_engineering_team"
+      ],
+      "next_step": 7
+    },
+
+    {
+      "step": 6,
+      "name": "request_human_approval",
+      "agent": "notification_agent",
+      "input": [
+        "approval_request",
+        "customer_details"
+      ],
+      "output": [
+        "approval_status"
+      ],
+      "next_step_conditions": {
+        "approval_status=approved": 7,
+        "approval_status=rejected": 11
+      }
+    },
+
+    {
+      "step": 7,
+      "name": "create_or_update_ticket",
+      "agent": "ticket_agent",
+      "input": [
+        "category",
+        "severity",
+        "action",
+        "conversation_context"
+      ],
+      "output": [
+        "ticket_id",
+        "ticket_status"
+      ],
+      "next_step": 8
+    },
+
+    {
+      "step": 8,
+      "name": "execute_resolution",
+      "agent": "decision_agent",
+      "input": [
+        "ticket_id",
+        "retrieved_documents",
+        "policy_context"
+      ],
+      "output": [
+        "resolution_result",
+        "resolution_message"
+      ],
+      "next_step_conditions": {
+        "resolution_result=success": 9,
+        "resolution_result=failed": 10
+      }
+    },
+
+    {
+      "step": 9,
+      "name": "notify_customer_and_resolve",
+      "agent": "notification_agent",
+      "input": [
+        "resolution_message",
+        "ticket_id"
+      ],
+      "output": [
+        "customer_notified"
+      ],
+      "ticket_state_transition": {
+        "from": "IN_PROGRESS",
+        "to": "RESOLVED"
+      },
+      "next_step": 12
+    },
+
+    {
+      "step": 10,
+      "name": "move_to_manual_support",
+      "agent": "ticket_agent",
+      "input": [
+        "ticket_id",
+        "failure_reason"
+      ],
+      "output": [
+        "manual_assignment_status"
+      ],
+      "ticket_state_transition": {
+        "from": "IN_PROGRESS",
+        "to": "ASSIGNED"
+      },
+      "next_step": 12
+    },
+
+    {
+      "step": 11,
+      "name": "close_rejected_request",
+      "agent": "ticket_agent",
+      "input": [
+        "ticket_id",
+        "approval_status"
+      ],
+      "output": [
+        "ticket_closed"
+      ],
+      "ticket_state_transition": {
+        "from": "WAITING_FOR_USER",
+        "to": "CLOSED"
+      },
+      "next_step": 12
+    },
+
+    {
+      "step": 12,
+      "name": "store_logs_and_analytics",
+      "agent": "ticket_agent",
+      "input": [
+        "ticket_data",
+        "workflow_logs"
+      ],
+      "output": [
+        "analytics_stored"
+      ]
+    }
+  ],
+
+  "routing_rules": {
+    "authentication": "Identity & Security Team",
+    "billing": "Finance Support Team",
+    "technical": "Engineering Team",
+    "integration": "Platform Integration Team",
+    "enterprise": "Enterprise Support Team",
+    "general": "Customer Support Team"
+  },
+
+  "severity_rules": {
+    "P0": [
+      "platform_down",
+      "payment_outage",
+      "authentication_system_failure"
+    ],
+
+    "P1": [
+      "major_feature_failure",
+      "dashboard_failure",
+      "integration_system_failure"
+    ],
+
+    "P2": [
+      "partial_service_degradation",
+      "sync_delay",
+      "performance_issue"
+    ],
+
+    "P3": [
+      "feature_help",
+      "ui_issue",
+      "documentation_request"
+    ]
+  },
+
+  "approval_required_actions": [
+    "refund_request",
+    "account_deletion",
+    "enterprise_compensation",
+    "security_override"
+  ],
+
+  "sla_rules": {
+    "P0_response_time_minutes": 15,
+    "P1_response_time_minutes": 60,
+    "P2_response_time_hours": 4,
+    "P3_response_time_business_days": 3
+  }
+}

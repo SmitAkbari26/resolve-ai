@@ -1,0 +1,43 @@
+# ─── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ─── Virtual Environments ───────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── Environment Variables ──────────────────────────────
+.env
+.env.local
+
+# ─── IDE ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Data & Storage ─────────────────────────────────────
+backend/data/
+*.db
+*.sqlite3
+
+# ─── OS Files ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Logs ────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Lock files (keep uv.lock) ──────────────────────────
+# uv.lock is tracked
+
+# ─── Extracted doc text ─────────────────────────────────
+docs/resolve-ai-extracted.txt
