@@ -7,6 +7,7 @@ class KnowledgeDocumentCreate(BaseModel):
     title: str
     document_type: str
     source_path: str
+    tenant_id: UUID | None = None
     uploaded_by: str | None = None
     version: int = 1
     status: str = "active"
@@ -16,6 +17,7 @@ class KnowledgeDocumentUpdate(BaseModel):
     title: str | None = None
     document_type: str | None = None
     source_path: str | None = None
+    tenant_id: UUID | None = None
     uploaded_by: str | None = None
     version: int | None = None
     status: str | None = None
@@ -26,6 +28,7 @@ class KnowledgeDocumentResponse(BaseModel):
     title: str
     document_type: str
     source_path: str
+    tenant_id: UUID | None = None
     uploaded_by: str | None
     version: int
     status: str

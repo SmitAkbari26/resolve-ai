@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import ChatPanel from "./ChatPanel";
 import { AnimatePresence } from "framer-motion";
@@ -10,13 +10,23 @@ export default function ChatLauncher() {
 
   const positionClass = config.position === "left" ? "left-6" : "right-6";
 
+  // Auto-open behaviour driven by config
+  useEffect(() => {
+    if (!config.autoOpen) return;
+    const timer = setTimeout(
+      () => setOpen(true),
+      config.autoOpenDelay ?? 2000,
+    );
+    return () => clearTimeout(timer);
+  }, [config.autoOpen, config.autoOpenDelay]);
+
   return (
     <>
       <button
         onClick={() => setOpen(!open)}
         className={`
           fixed bottom-6 ${positionClass}
-          h-16 w-16 rounded-full
+          rounded-full
           shadow-2xl
           flex items-center justify-center
           hover:scale-110
@@ -25,6 +35,8 @@ export default function ChatLauncher() {
           cursor-pointer
         `}
         style={{
+          width: config.launcherSize,
+          height: config.launcherSize,
           background: `linear-gradient(135deg, ${config.primaryColor}, #6366f1)`,
         }}
       >
@@ -34,7 +46,7 @@ export default function ChatLauncher() {
           <MessageCircle className="text-white" />
         )}
 
-        {!open && (
+        {!open && config.showBadge && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 rounded-full animate-pulse" />
         )}
       </button>

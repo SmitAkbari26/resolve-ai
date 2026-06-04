@@ -17,24 +17,41 @@ async_session_factory = async_sessionmaker(
 )
 
 
+from sqlalchemy import text
+
 async def init_db():
     try:
         async with engine.begin() as conn:
             import db.schemas
 
             await conn.run_sync(Base.metadata.create_all)
+            
+            # Dynamically ensure tenant_id column exists on knowledge_documents table
+            await conn.execute(
+                text(
+                    "ALTER TABLE knowledge_documents "
+                    "ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL"
+                )
+            )
         logger.info("PostgreSQL database initialized")
     except Exception as e:
         logger.warning(f"PostgreSQL connection failed (continuing without DB): {e}")
+
 
 
 async def get_db():
     async with async_session_factory() as session:
         try:
             yield session
-            await session.commit()
+            if session.is_active:
+                await session.commit()
         except Exception:
-            await session.rollback()
+            if session.is_active:
+                await session.rollback()
             raise
         finally:
-            await session.close()
+            try:
+                await session.close()
+            except Exception:
+                pass
+

@@ -46,6 +46,7 @@ class KnowledgeDocumentService:
             title=document.title,
             document_type=document.document_type,
             source_path=document.source_path,
+            tenant_id=document.tenant_id,
             uploaded_by=document.uploaded_by,
             version=document.version,
             status=document.status,
@@ -61,6 +62,7 @@ class KnowledgeDocumentService:
         title: str | None,
         document_type: str | None,
         uploaded_by: str | None,
+        tenant_id: UUID | None = None,
     ) -> tuple[KnowledgeDocumentResponse, int]:
         ext = Path(filename).suffix.lower()
         if ext not in ALLOWED_EXTENSIONS:
@@ -88,17 +90,19 @@ class KnowledgeDocumentService:
                 title=title,
                 document_type=doc_type,
                 source_path=str(stored_path),
+                tenant_id=tenant_id,
                 uploaded_by=uploaded_by,
                 status="active",
             )
         )
 
         try:
-            chunk_count, chunk_rows = self.pipeline.ingest_file(
+            chunk_count, chunk_rows = await self.pipeline.ingest_file(
                 file_path=stored_path,
                 document_id=str(db_doc.id),
                 title=title,
                 document_type=doc_type,
+                tenant_id=tenant_id,
             )
 
             for row in chunk_rows:
@@ -133,7 +137,7 @@ class KnowledgeDocumentService:
         self.pipeline.delete_document_vectors(str(document.id))
         await self.repository.delete_chunks_for_document(str(document.id))
 
-        chunk_count, chunk_rows = self.pipeline.ingest_file(
+        chunk_count, chunk_rows = await self.pipeline.ingest_file(
             file_path=path,
             document_id=str(document.id),
             title=document.title,
@@ -152,6 +156,7 @@ class KnowledgeDocumentService:
             )
 
         return chunk_count
+
 
     async def get_stats(self) -> dict:
         from db.vector_store import collection_count
@@ -213,4 +218,5 @@ class KnowledgeDocumentService:
 
     async def ingest_datasets_folder(self) -> int:
         """Re-ingest static files from datasets/ (legacy behavior)."""
-        return self.pipeline.ingest()
+        return await self.pipeline.ingest()
+

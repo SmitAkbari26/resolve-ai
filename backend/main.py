@@ -31,7 +31,9 @@ from api.chat_router import router as chat_router
 from api.widget_configuration_router import router as widget_configuration_router
 from api.widget_domain_router import router as widget_domain_router
 from api.tenant_router import router as tenant_router
+from api.scraper_router import router as scraper_router
 from api.middleware.middleware import RequestLoggingMiddleware, RateLimitMiddleware
+
 from db.database import init_db
 from db.vector_store import init_vector_store, get_collection
 from rag.embeddings import _get_sentence_transformer
@@ -61,10 +63,11 @@ async def lifespan(app: FastAPI):
         logger.info("Vector store is empty. Starting initial RAG ingestion...")
         try:
             pipeline = RAGPipeline()
-            num_chunks = pipeline.ingest()
+            num_chunks = await pipeline.ingest()
             logger.info(f"Initial ingestion complete: {num_chunks} chunks stored.")
         except Exception as e:
             logger.error(f"Initial RAG ingestion failed: {e}")
+
     else:
         logger.info(
             f"Vector store already contains {collection.count() if collection else 0} documents."
@@ -84,7 +87,11 @@ app = FastAPI(
 # ─── Middleware ───────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://cdb7-14-98-189-6.ngrok-free.app", "http://localhost:5176"],
+    allow_origins=[
+        "https://cdb7-14-98-189-6.ngrok-free.app",
+        "http://localhost:5176",
+        "http://localhost:5175",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,6 +122,7 @@ app.include_router(chat_router, prefix=f"{API_PREFIX}")
 app.include_router(widget_configuration_router, prefix=f"{API_PREFIX}")
 app.include_router(widget_domain_router, prefix=f"{API_PREFIX}")
 app.include_router(tenant_router, prefix=f"{API_PREFIX}")
+app.include_router(scraper_router, prefix=f"{API_PREFIX}")
 
 
 @app.get("/health")

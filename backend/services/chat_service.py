@@ -59,31 +59,30 @@ class ChatService:
         user_message: str,
         conversation_id: str | None = None,
         stream_callback = None,
+        api_key: str | None = None,
     ) -> dict:
         """
         Full end-to-end chat handler.
-
-        Args:
-            user_id:         PostgreSQL UUID of the user.
-            user_email:      Real email address for notifications.
-            user_message:    The customer's text message.
-            conversation_id: Existing conversation UUID (optional).
-                             If None, a new conversation is created.
-
-        Returns a structured dict:
-        {
-            "conversation_id": "...",
-            "workflow_id":     "WRK-XXXXXXXX",
-            "status":          "completed" | "paused" | "failed",
-            "ai_response":     "...",
-            "ticket_id":       "..." | null,
-            "approval_id":     "..." | null,
-            "requires_approval": false,
-            "plan":            [...],
-            "agent_trace":     [...],
-            "runtime_events":  [...]
-        }
         """
+
+        # Resolve tenant_id and company_name from api_key
+        tenant_id = None
+        company_name = "our company"
+        if api_key:
+            from repositories.tenant_repository import TenantRepository
+            try:
+                tenant_repo = TenantRepository(self.db)
+                tenant = await tenant_repo.get_by_api_key(api_key)
+                if tenant:
+                    tenant_id = str(tenant.id)
+                    from services.widget_configuration_service import WidgetConfigurationService
+                    from uuid import UUID
+                    widget_svc = WidgetConfigurationService(self.db)
+                    widget_conf = await widget_svc.get_configuration(UUID(tenant_id))
+                    if widget_conf and widget_conf.company_name:
+                        company_name = widget_conf.company_name
+            except Exception as e:
+                logger.warning(f"Could not resolve tenant or company name by API key: {e}")
 
         # =================================================
         # STEP 1 — Ensure Conversation Record in DB
@@ -92,11 +91,13 @@ class ChatService:
         conversation_id = await self._ensure_conversation(
             user_id=user_id,
             conversation_id=conversation_id,
+            tenant_id=tenant_id,
+            user_email=user_email,
         )
 
         logger.info(
             f"Chat | User={user_id} | "
-            f"ConversationID={conversation_id}"
+            f"ConversationID={conversation_id} | Tenant={tenant_id}"
         )
 
         try:
@@ -144,7 +145,21 @@ class ChatService:
             user_email=user_email,
             ticket_id=ticket_id,
             stream_callback=stream_callback,
+            tenant_id=tenant_id,
+            company_name=company_name,
         )
+
+        # The DB session was closed during workflow execution to prevent deadlocks.
+        # Re-open a fresh session from the factory for the remaining DB operations.
+        from db.database import async_session_factory
+        new_db = async_session_factory()
+        self.db = new_db
+        self._conversation_svc.db = new_db
+        self._message_svc.db = new_db
+        self._workflow_svc.db = new_db
+        self._audit_svc.db = new_db
+
+
 
         # If a ticket was created this turn, reload it for the next user message
         if workflow_result.get("ticket_id") and not ticket_id:
@@ -266,11 +281,56 @@ class ChatService:
         self,
         user_id: str,
         conversation_id: str | None,
+        tenant_id: str | None = None,
+        user_email: str | None = None,
     ) -> str:
         """
         Returns the conversation_id.
         Creates a new ConversationRecord in DB if none provided.
         """
+        try:
+            from uuid import UUID
+            from db.schemas import UserRecord
+            from sqlalchemy import select
+            from core.security import hash_password
+            
+            user_uuid = UUID(user_id)
+            
+            # 1. Ensure user exists first
+            result = await self.db.execute(
+                select(UserRecord).where(UserRecord.id == user_uuid)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                email = user_email or f"{user_id}@guest.resolve.ai"
+                # Check if email is already taken
+                email_result = await self.db.execute(
+                    select(UserRecord).where(UserRecord.email == email)
+                )
+                existing_email_user = email_result.scalar_one_or_none()
+                if existing_email_user:
+                    # Link to existing user if email matches
+                    user_uuid = existing_email_user.id
+                    user_id = str(user_uuid)
+                else:
+                    name = email.split("@")[0] if "@" in email else "Guest"
+                    new_user = UserRecord(
+                        id=user_uuid,
+                        name=name,
+                        email=email,
+                        role="customer",
+                        password_hash=hash_password("guest_secret_pass_123!"),
+                    )
+                    self.db.add(new_user)
+                    await self.db.commit()
+                    logger.info(f"Auto-created guest user record for user_id {user_id} with email {email}")
+        except Exception as ue:
+            logger.warning(f"Failed to verify or auto-create user {user_id}: {ue}")
+            try:
+                await self.db.rollback()
+            except Exception:
+                pass
+
         if conversation_id:
             # Verify it exists; if not, create it
             existing = await self._conversation_svc.get_conversation_by_id(
@@ -281,9 +341,11 @@ class ChatService:
 
         # Create a fresh conversation record
         try:
+            from uuid import UUID
             new_conv = await self._conversation_svc.create_conversation(
                 ConversationCreate(
-                    user_id=UUID(user_id),
+                    user_id=user_uuid,
+                    tenant_id=UUID(tenant_id) if tenant_id else None,
                     channel="web_chat",
                     sentiment="neutral",
                     status="active",
@@ -295,6 +357,7 @@ class ChatService:
             logger.error(f"Conversation creation failed: {e}")
             # Return the provided conversation_id as last resort
             return conversation_id or ""
+
 
     async def _save_message(
         self,

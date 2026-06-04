@@ -61,6 +61,7 @@ class ConversationRecord(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)
     channel = Column(String(50), default="web_chat")
     sentiment = Column(String(50), default="neutral")
     status = Column(String(50), default="active")
@@ -69,8 +70,10 @@ class ConversationRecord(Base):
 
     # Relationships
     user = relationship("UserRecord", back_populates="conversations")
+    tenant = relationship("Tenant")
     messages = relationship("ConversationMessageRecord", back_populates="conversation")
     ticket = relationship("TicketRecord", back_populates="conversation", uselist=False)
+
 
 
 class ConversationMessageRecord(Base):
@@ -285,6 +288,7 @@ class KnowledgeDocumentRecord(Base):
     __tablename__ = "knowledge_documents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)
     title = Column(String(255), nullable=False)
     document_type = Column(String(100), nullable=False)
     source_path = Column(Text, nullable=False)
@@ -295,6 +299,7 @@ class KnowledgeDocumentRecord(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     # Relationships
+    tenant = relationship("Tenant")
     chunks = relationship("DocumentChunkRecord", back_populates="document")
 
 

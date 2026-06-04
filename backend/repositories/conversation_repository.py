@@ -10,6 +10,7 @@ class ConversationRepository:
     async def create_conversation(self, payload: ConversationCreate):
         conversation = ConversationRecord(
             user_id=payload.user_id,
+            tenant_id=payload.tenant_id,
             channel=payload.channel,
             sentiment=payload.sentiment,
             status=payload.status,
@@ -18,6 +19,7 @@ class ConversationRepository:
         await self.db.commit()
         await self.db.refresh(conversation)
         return conversation
+
 
     async def get_conversations(self):
         result = await self.db.execute(select(ConversationRecord))

@@ -12,13 +12,17 @@ from schemas.knowledge_document_schema import (
     KnowledgeDocumentUploadResponse,
     KnowledgeBaseStatsResponse,
 )
+from core.security import require_role
 
 router = APIRouter(prefix="/knowledge-documents", tags=["Knowledge Documents"])
 
 # ─── Static paths (must stay before /{document_id}) ─────────────────────────
 
 @router.get("/meta/stats", response_model=KnowledgeBaseStatsResponse)
-async def knowledge_base_stats_api(db: AsyncSession = Depends(get_db)):
+async def knowledge_base_stats_api(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin", "manager", "agent"])),
+):
     service = KnowledgeDocumentService(db)
     return await service.get_stats()
 
@@ -29,7 +33,9 @@ async def upload_document_api(
     title: str | None = Form(None),
     document_type: str | None = Form(None),
     uploaded_by: str | None = Form(None),
+    tenant_id: UUID | None = Form(None),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     """
     Upload a file, store it on disk, index chunks in ChromaDB for RAG.
@@ -45,6 +51,7 @@ async def upload_document_api(
             title=title,
             document_type=document_type,
             uploaded_by=uploaded_by,
+            tenant_id=tenant_id,
         )
         return KnowledgeDocumentUploadResponse(
             document=document,
@@ -58,7 +65,10 @@ async def upload_document_api(
 
 
 @router.post("/ingest")
-async def ingest_datasets_api(db: AsyncSession = Depends(get_db)):
+async def ingest_datasets_api(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
+):
     """Re-ingest all files from the static datasets/ folder."""
     try:
         service = KnowledgeDocumentService(db)
@@ -69,14 +79,19 @@ async def ingest_datasets_api(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("", response_model=list[KnowledgeDocumentResponse])
-async def get_documents_api(db: AsyncSession = Depends(get_db)):
+async def get_documents_api(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin", "manager", "agent"])),
+):
     service = KnowledgeDocumentService(db)
     return await service.get_documents()
 
 
 @router.post("", response_model=KnowledgeDocumentResponse)
 async def create_document_api(
-    payload: KnowledgeDocumentCreate, db: AsyncSession = Depends(get_db)
+    payload: KnowledgeDocumentCreate,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     try:
         service = KnowledgeDocumentService(db)
@@ -87,14 +102,20 @@ async def create_document_api(
 
 @router.get("/by-type/{document_type}", response_model=list[KnowledgeDocumentResponse])
 async def get_documents_by_type_api(
-    document_type: str, db: AsyncSession = Depends(get_db)
+    document_type: str,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin", "manager", "agent"])),
 ):
     service = KnowledgeDocumentService(db)
     return await service.get_documents_by_type(document_type)
 
 
 @router.get("/by-status/{status}", response_model=list[KnowledgeDocumentResponse])
-async def get_documents_by_status_api(status: str, db: AsyncSession = Depends(get_db)):
+async def get_documents_by_status_api(
+    status: str,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin", "manager", "agent"])),
+):
     service = KnowledgeDocumentService(db)
     return await service.get_documents_by_status(status)
 
@@ -102,7 +123,11 @@ async def get_documents_by_status_api(status: str, db: AsyncSession = Depends(ge
 # ─── Document ID routes (UUID avoids matching "stats", "type", etc.) ────────
 
 @router.get("/{document_id}", response_model=KnowledgeDocumentResponse)
-async def get_document_api(document_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_document_api(
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin", "manager", "agent"])),
+):
     service = KnowledgeDocumentService(db)
     document = await service.get_document_by_id(str(document_id))
     if not document:
@@ -115,6 +140,7 @@ async def update_document_api(
     document_id: UUID,
     payload: KnowledgeDocumentUpdate,
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     service = KnowledgeDocumentService(db)
     document = await service.update_document(str(document_id), payload)
@@ -124,7 +150,11 @@ async def update_document_api(
 
 
 @router.delete("/{document_id}")
-async def delete_document_api(document_id: UUID, db: AsyncSession = Depends(get_db)):
+async def delete_document_api(
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
+):
     service = KnowledgeDocumentService(db)
     deleted = await service.delete_document(str(document_id))
     if not deleted:
@@ -133,7 +163,11 @@ async def delete_document_api(document_id: UUID, db: AsyncSession = Depends(get_
 
 
 @router.post("/{document_id}/reingest")
-async def reingest_document_api(document_id: UUID, db: AsyncSession = Depends(get_db)):
+async def reingest_document_api(
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
+):
     try:
         service = KnowledgeDocumentService(db)
         count = await service.reingest_document(str(document_id))

@@ -194,12 +194,14 @@ class ConversationAgent(BaseAgent):
             )
 
         # ─── RAG retrieval (conditional) ───────────────────────────
+        tenant_id = state.get("tenant_id")
         try:
             if should_rag:
-                retrieval_result = self.rag.retrieve_context(
+                retrieval_result = await self.rag.retrieve_context(
                     query=user_query,
                     category=detected_category,
                     top_k=3,
+                    tenant_id=tenant_id,
                 )
                 retrieved_context = [
                     {
@@ -243,7 +245,9 @@ class ConversationAgent(BaseAgent):
                 history_text=history_text,
                 existing_ticket=existing_ticket_text,
                 retrieval_result=context_text,
+                company_name=state.get("company_name", "our company"),
             )
+
 
             logger.info("ConversationAgent | Sending prompt to LLM")
             sc_response = await self.invoke_llm(prompt, state=state, json_mode=True)

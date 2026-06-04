@@ -27,6 +27,8 @@ class WorkflowService:
         user_email: str = "",
         ticket_id: str = "",
         stream_callback = None,
+        tenant_id: str | None = None,
+        company_name: str = "our company",
     ) -> dict:
 
         workflow_id = generate_id("WRK")
@@ -63,7 +65,10 @@ class WorkflowService:
             "skip_notifications": not bool(user_email),
             "stream_callback": stream_callback,
             "available_agents": available_agents,
+            "tenant_id": tenant_id,
+            "company_name": company_name,
         }
+
 
         if ticket_id:
             state["ticket_id"] = ticket_id
@@ -90,6 +95,15 @@ class WorkflowService:
                     }
             except Exception as e:
                 logger.warning(f"Failed to load existing ticket for state: {e}")
+
+
+        # Commit and close the session to release it back to the connection pool
+        # during the long-running orchestrator and agent/LLM execution loop.
+        try:
+            await self.db.commit()
+            await self.db.close()
+        except Exception as e:
+            logger.warning(f"Could not close DB session before orchestrator: {e}")
 
         result = await self.orchestrator.run(state)
 

@@ -32,7 +32,7 @@ class RAGPipeline:
     def __init__(self, datasets_dir: Path | None = None):
         self.datasets_dir = datasets_dir or DATASETS_DIR
 
-    def ingest(self, directory: Path | None = None) -> int:
+    async def ingest(self, directory: Path | None = None) -> int:
         """
         Ingest documents from a directory into the vector store.
         Returns the number of chunks ingested.
@@ -55,7 +55,7 @@ class RAGPipeline:
         # Step 3: Generate embeddings
         texts = [chunk.content for chunk in chunks]
 
-        embeddings = generate_embeddings(texts)
+        embeddings = await generate_embeddings(texts)
 
         # Step 4: Store in ChromaDB
         ids = [
@@ -73,12 +73,13 @@ class RAGPipeline:
         logger.info(f"Ingestion complete — {len(chunks)} chunks stored")
         return len(chunks)
 
-    def ingest_file(
+    async def ingest_file(
         self,
         file_path: Path,
         document_id: str,
         title: str,
         document_type: str,
+        tenant_id = None,
     ) -> tuple[int, list[dict]]:
         """
         Ingest one uploaded file into ChromaDB.
@@ -100,7 +101,7 @@ class RAGPipeline:
 
         texts = [c.content for c in chunks]
         print(texts)
-        embeddings = generate_embeddings(texts)
+        embeddings = await generate_embeddings(texts)
 
         ids: list[str] = []
         metadatas: list[dict] = []
@@ -115,6 +116,7 @@ class RAGPipeline:
                 "document_type": document_type,
                 "chunk_index": i,
                 "type": chunk.metadata.get("type", document_type),
+                "tenant_id": str(tenant_id) if tenant_id else "shared",
             }
             metadatas.append(meta)
             db_chunks.append(
@@ -134,14 +136,15 @@ class RAGPipeline:
         """Remove all vector chunks for a knowledge document."""
         delete_documents_where({"document_id": str(document_id)})
 
-    def retrieve_context(
-        self, query: str, category: str = "", top_k: int = 5
+    async def retrieve_context(
+        self, query: str, category: str = "", top_k: int = 5, tenant_id = None
     ) -> RetrievalResult:
         """
         Retrieve relevant context for a user query.
         Uses hybrid retrieval (vector + knowledge graph).
         """
-        return retrieve(query=query, category=category, top_k=top_k)
+        return await retrieve(query=query, category=category, top_k=top_k, tenant_id=tenant_id)
+
 
     def build_augmented_prompt(
         self, query: str, context: RetrievalResult, system_instruction: str = ""

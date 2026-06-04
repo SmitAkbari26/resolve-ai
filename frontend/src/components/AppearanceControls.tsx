@@ -38,13 +38,13 @@ export default function AppearanceControls({ config, setConfig }: Props) {
         <h3 className="font-semibold">Appearance</h3>
       </div>
 
-      <Slider label="Width" keyName="width" min={350} max={600} />
+      <Slider label="Width" keyName="width" min={50} max={600} />
 
-      <Slider label="Height" keyName="height" min={500} max={900} />
+      <Slider label="Height" keyName="height" min={50} max={900} />
 
-      <Slider label="Radius" keyName="borderRadius" min={16} max={48} />
+      <Slider label="Radius" keyName="borderRadius" min={2} max={48} />
 
-      <Slider label="Launcher" keyName="launcherSize" min={48} max={90} />
+      <Slider label="Launcher" keyName="launcherSize" min={2} max={90} />
     </div>
   );
 }

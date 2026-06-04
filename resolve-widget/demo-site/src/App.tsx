@@ -17,22 +17,17 @@ export default function App() {
     const script = document.createElement("script");
     const link = document.createElement("link");
 
-    script.src = "https://d319-14-98-189-6.ngrok-free.app/widget.js";
+    script.src = "http://127.0.0.1:5500/widget.js";
 
     document.body.appendChild(script);
 
     link.rel = "stylesheet";
 
-    link.href = "https://d319-14-98-189-6.ngrok-free.app//widget.css";
+    link.href = "http://127.0.0.1:5500/widget.css";
 
     document.head.appendChild(link);
 
     console.log("Widget CSS Loaded");
-
-    // return () => {
-    //   document.body.removeChild(link);
-    //   document.body.removeChild(script);
-    // };
   }, []);
   return (
     <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">

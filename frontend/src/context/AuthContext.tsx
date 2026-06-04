@@ -1,16 +1,18 @@
 import React, { createContext, useContext, useState } from 'react';
 
+export type UserRole = 'admin' | 'manager' | 'agent' | 'customer';
+
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'customer';
+  role: UserRole;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (token: string, role: 'admin' | 'customer', user_id: string, email: string) => void;
+  login: (token: string, role: UserRole, user_id: string, email: string) => void;
   logout: () => void;
 }
 
@@ -20,20 +22,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(() => {
     const userId = localStorage.getItem('user_id');
-    const email = localStorage.getItem('email');
-    const role = localStorage.getItem('role') as 'admin' | 'customer' | null;
-
-    if (userId && email && role) {
-      return { id: userId, email, role };
-    }
+    const email  = localStorage.getItem('email');
+    const role   = localStorage.getItem('role') as UserRole | null;
+    if (userId && email && role) return { id: userId, email, role };
     return null;
   });
 
-  const login = (newToken: string, newRole: 'admin' | 'customer', user_id: string, email: string) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('role', newRole);
+  const login = (newToken: string, newRole: UserRole, user_id: string, email: string) => {
+    localStorage.setItem('token',   newToken);
+    localStorage.setItem('role',    newRole);
     localStorage.setItem('user_id', user_id);
-    localStorage.setItem('email', email);
+    localStorage.setItem('email',   email);
     setToken(newToken);
     setUser({ id: user_id, email, role: newRole });
   };
@@ -47,19 +46,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const isAuthenticated = !!token;
-
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };

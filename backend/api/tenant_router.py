@@ -5,6 +5,7 @@ from fastapi import Depends
 from fastapi import HTTPException
 
 from db.database import get_db
+from core.security import require_role
 
 from services.tenant_service import (
     TenantService,
@@ -28,6 +29,7 @@ router = APIRouter(
 async def create_tenant(
     request: CreateTenantRequest,
     db=Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     try:
         service = TenantService(db)
@@ -47,6 +49,7 @@ async def create_tenant(
 )
 async def get_tenants(
     db=Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     service = TenantService(db)
 
@@ -60,6 +63,7 @@ async def get_tenants(
 async def get_tenant(
     tenant_id: UUID,
     db=Depends(get_db),
+    _: dict = Depends(require_role(["admin"])),
 ):
     service = TenantService(db)
 

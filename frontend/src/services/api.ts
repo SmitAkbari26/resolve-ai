@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://be47-14-98-189-6.ngrok-free.app/api/v1";
+const API_BASE_URL = "http://localhost:8000/api/v1";
 export const API_WS_URL = "ws://localhost:8000/api/v1/chat/ws";
 
 export const apiClient = axios.create({
@@ -241,8 +241,8 @@ export const historyApi = {
 
 export const widgetConfigurationApi = {
   async save(tenantId: string, config: any) {
-    const response = await axios.post(
-      `${API_BASE_URL}/widget-configurations/${tenantId}`,
+    const response = await apiClient.post(
+      `/widget-configurations/${tenantId}`,
       config,
     );
 
@@ -250,8 +250,8 @@ export const widgetConfigurationApi = {
   },
 
   async get(tenantId: string) {
-    const response = await axios.get(
-      `${API_BASE_URL}/widget-configurations/${tenantId}`,
+    const response = await apiClient.get(
+      `/widget-configurations/${tenantId}`,
     );
 
     return response.data;
@@ -280,19 +280,19 @@ export interface UpdateTenantRequest {
 
 export const tenantApi = {
   async listTenants(): Promise<Tenant[]> {
-    const response = await axios.get(`${API_BASE_URL}/tenants`);
+    const response = await apiClient.get("/tenants");
 
     return response.data;
   },
 
   async getTenant(tenantId: string): Promise<Tenant> {
-    const response = await axios.get(`${API_BASE_URL}/tenants/${tenantId}`);
+    const response = await apiClient.get(`/tenants/${tenantId}`);
 
     return response.data;
   },
 
   async createTenant(request: CreateTenantRequest): Promise<Tenant> {
-    const response = await axios.post(`${API_BASE_URL}/tenants`, request);
+    const response = await apiClient.post("/tenants", request);
 
     return response.data;
   },
@@ -301,8 +301,8 @@ export const tenantApi = {
     tenantId: string,
     request: UpdateTenantRequest,
   ): Promise<Tenant> {
-    const response = await axios.put(
-      `${API_BASE_URL}/tenants/${tenantId}`,
+    const response = await apiClient.put(
+      `/tenants/${tenantId}`,
       request,
     );
 
@@ -320,15 +320,15 @@ export interface WidgetDomain {
 
 export const widgetDomainApi = {
   async getDomains(tenantId: string): Promise<WidgetDomain[]> {
-    const response = await axios.get(
-      `${API_BASE_URL}/widget-domains/${tenantId}`,
+    const response = await apiClient.get(
+      `/widget-domains/${tenantId}`,
     );
 
     return response.data;
   },
 
   async createDomain(tenantId: string, domain: string) {
-    const response = await axios.post(`${API_BASE_URL}/widget-domains`, {
+    const response = await apiClient.post("/widget-domains", {
       tenant_id: tenantId,
       domain,
     });
@@ -337,10 +337,11 @@ export const widgetDomainApi = {
   },
 
   async deleteDomain(domainId: string) {
-    const response = await axios.delete(
-      `${API_BASE_URL}/widget-domains/${domainId}`,
+    const response = await apiClient.delete(
+      `/widget-domains/${domainId}`,
     );
 
     return response.data;
   },
 };
+

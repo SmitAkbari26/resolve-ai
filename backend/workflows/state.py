@@ -53,3 +53,7 @@ class SupportWorkflowState(TypedDict, total=False):
     error: Optional[str]
 
     metadata: dict[str, Any]
+
+    tenant_id: Optional[str]
+    company_name: Optional[str]
+

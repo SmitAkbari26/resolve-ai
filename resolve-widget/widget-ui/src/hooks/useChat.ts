@@ -2,25 +2,65 @@ import { useEffect, useRef, useState } from "react";
 
 import { API_WS_URL } from "../config/api";
 import { WidgetWebSocket } from "../services/websocket";
+import { chatApi } from "../services/chatApi";
 import type { ChatMessage, ChatResponse } from "../types/chat";
 
 export function useChat(welcomeMessage: string) {
   const wsRef = useRef(new WidgetWebSocket());
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      message: welcomeMessage,
-    },
-  ]);
-
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-
   const [connected, setConnected] = useState(false);
 
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const globalConfig = (window as any).ResolveAIConfig || {};
+  const apiKey = globalConfig.apiKey || "";
+
+  const getOrInitUserId = (): string => {
+    if (globalConfig.userId) {
+      return globalConfig.userId;
+    }
+    let uId = localStorage.getItem("resolve_ai_user_id");
+    if (!uId) {
+      uId = crypto.randomUUID ? crypto.randomUUID() : "user_" + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("resolve_ai_user_id", uId);
+    }
+    return uId;
+  };
+
+  const [userId, setUserId] = useState<string>(getOrInitUserId());
+  const [conversationId, setConversationId] = useState<string | null>(
+    localStorage.getItem("resolve_ai_conversation_id")
+  );
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (conversationId) {
+        setLoading(true);
+        try {
+          const history = await chatApi.getHistory(conversationId);
+          if (history && history.messages) {
+            const mapped = history.messages.map((m: any) => ({
+              role: m.role as "user" | "assistant",
+              message: m.content,
+              timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+            }));
+            setMessages(mapped.length > 0 ? mapped : [{ role: "assistant", message: welcomeMessage, timestamp: new Date() }]);
+          }
+        } catch (err) {
+          console.error("Failed to load conversation history:", err);
+          localStorage.removeItem("resolve_ai_conversation_id");
+          setConversationId(null);
+          setMessages([{ role: "assistant", message: welcomeMessage, timestamp: new Date() }]);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setMessages([{ role: "assistant", message: welcomeMessage, timestamp: new Date() }]);
+      }
+    };
+    loadHistory();
+  }, [conversationId, welcomeMessage]);
 
   const connect = () => {
     wsRef.current.connect(
@@ -45,6 +85,7 @@ export function useChat(welcomeMessage: string) {
               updated[updated.length - 1] = {
                 role: "assistant",
                 message: last.message + (result.delta || ""),
+                timestamp: last.timestamp || new Date(),
               };
 
               return updated;
@@ -55,6 +96,7 @@ export function useChat(welcomeMessage: string) {
               {
                 role: "assistant",
                 message: result.delta || "",
+                timestamp: new Date(),
               },
             ];
           });
@@ -66,6 +108,7 @@ export function useChat(welcomeMessage: string) {
 
         if (result.conversation_id) {
           setConversationId(result.conversation_id);
+          localStorage.setItem("resolve_ai_conversation_id", result.conversation_id);
         }
 
         if (result.ai_response) {
@@ -78,6 +121,7 @@ export function useChat(welcomeMessage: string) {
               updated[updated.length - 1] = {
                 role: "assistant",
                 message: result.ai_response || "",
+                timestamp: new Date(),
               };
 
               return updated;
@@ -88,6 +132,7 @@ export function useChat(welcomeMessage: string) {
               {
                 role: "assistant",
                 message: result.ai_response || "",
+                timestamp: new Date(),
               },
             ];
           });
@@ -113,10 +158,6 @@ export function useChat(welcomeMessage: string) {
     );
   };
 
-  console.log("Sending:", {
-    conversationId,
-  });
-
   useEffect(() => {
     connect();
 
@@ -133,17 +174,28 @@ export function useChat(welcomeMessage: string) {
       {
         role: "user",
         message: text,
+        timestamp: new Date(),
       },
     ]);
 
     setLoading(true);
 
     wsRef.current.send({
-      user_id: "21f54207-121b-4607-b2b4-d84c09086eae",
-      user_email: "smit.akbari@example.com",
+      user_id: userId,
+      user_email: globalConfig.userEmail || `${userId}@guest.resolve.ai`,
       message: text,
       conversation_id: conversationId,
+      api_key: apiKey,
     });
+  };
+
+  const startNewChat = () => {
+    localStorage.removeItem("resolve_ai_conversation_id");
+    const newUid = crypto.randomUUID ? crypto.randomUUID() : "user_" + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("resolve_ai_user_id", newUid);
+    setUserId(newUid);
+    setConversationId(null);
+    setMessages([{ role: "assistant", message: welcomeMessage, timestamp: new Date() }]);
   };
 
   return {
@@ -153,5 +205,7 @@ export function useChat(welcomeMessage: string) {
     connected,
     conversationId,
     sendMessage,
+    startNewChat,
   };
 }
+

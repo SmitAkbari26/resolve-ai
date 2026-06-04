@@ -10,6 +10,8 @@ logger = get_logger(__name__)
 _model = None
 
 
+import asyncio
+
 def _get_sentence_transformer():
     """Lazy-load the sentence transformer model."""
     global _model
@@ -24,24 +26,25 @@ def _get_sentence_transformer():
     return _model
 
 
-def generate_embeddings(texts: list[str]) -> list[list[float]]:
+async def generate_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings for a list of texts.
-    Uses the configured provider (sentence_transformers or openai).
+    Generate embeddings for a list of texts asynchronously.
+    Uses sentence_transformers offloaded to a thread pool.
     """
     if not texts:
         return []
-    return _generate_st_embeddings(texts)
+    return await asyncio.to_thread(_generate_st_embeddings, texts)
 
 
-def generate_embedding(text: str) -> list[float]:
-    """Generate a single embedding vector."""
-    embeddings = generate_embeddings([text])
+async def generate_embedding(text: str) -> list[float]:
+    """Generate a single embedding vector asynchronously."""
+    embeddings = await generate_embeddings([text])
     return embeddings[0] if embeddings else []
 
 
 def _generate_st_embeddings(texts: list[str]) -> list[list[float]]:
-    """Generate embeddings using Sentence Transformers."""
+    """Generate embeddings using Sentence Transformers (blocking CPU work)."""
     model = _get_sentence_transformer()
     embeddings = model.encode(texts, show_progress_bar=False, normalize_embeddings=True)
     return embeddings.tolist()
+

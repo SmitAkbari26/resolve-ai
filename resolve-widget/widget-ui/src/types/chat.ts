@@ -1,7 +1,9 @@
 export interface ChatMessage {
   role: "user" | "assistant";
   message: string;
+  timestamp?: Date | string;
 }
+
 
 export interface WidgetChatConfig {
   userId?: string;

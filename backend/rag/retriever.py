@@ -13,6 +13,8 @@ from utils.text_sanitize import sanitize_text
 logger = get_logger(__name__)
 
 
+import asyncio
+
 class RetrievalResult:
     """Container for retrieval results from multiple sources."""
 
@@ -39,7 +41,7 @@ class RetrievalResult:
         return len(self.all_context)
 
 
-def retrieve(query: str, category: str = "", top_k: int = None) -> RetrievalResult:
+async def retrieve(query: str, category: str = "", top_k: int = None, tenant_id = None) -> RetrievalResult:
     """
     Perform hybrid retrieval: semantic vector search + knowledge graph lookup.
 
@@ -47,6 +49,7 @@ def retrieve(query: str, category: str = "", top_k: int = None) -> RetrievalResu
         query: The user's query text.
         category: Optional issue category for graph-enhanced retrieval.
         top_k: Number of results to return from vector search.
+        tenant_id: Optional tenant UUID to restrict vector search results.
 
     Returns:
         RetrievalResult with merged context from all sources.
@@ -56,11 +59,25 @@ def retrieve(query: str, category: str = "", top_k: int = None) -> RetrievalResu
 
     # 1. Semantic Vector Search (ChromaDB)
     try:
-        query_emb = generate_embedding(query)
-        chroma_results = query_documents(
+        query_emb = await generate_embedding(query)
+        
+        where_filter = None
+        if tenant_id:
+            where_filter = {
+                "$or": [
+                    {"tenant_id": str(tenant_id)},
+                    {"tenant_id": "shared"}
+                ]
+            }
+        else:
+            where_filter = {"tenant_id": "shared"}
+
+        chroma_results = await asyncio.to_thread(
+            query_documents,
             query_text=query,
             n_results=top_k,
             query_embedding=query_emb,
+            where=where_filter,
         )
 
         if chroma_results and chroma_results.get("documents"):
@@ -82,3 +99,4 @@ def retrieve(query: str, category: str = "", top_k: int = None) -> RetrievalResu
     except Exception as e:
         logger.warning(f"Vector search failed: {e}")
     return result
+

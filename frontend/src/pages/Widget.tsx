@@ -107,40 +107,19 @@ export default function Widget() {
 
       await widgetConfigurationApi.save(selectedTenantId, {
         primary_color: config.primaryColor,
-
         position: config.position,
-
         company_name: config.companyName,
-
         welcome_message: config.welcomeMessage,
-
         width: config.width,
         height: config.height,
-
         border_radius: config.borderRadius,
-
         launcher_size: config.launcherSize,
-
         show_badge: config.showBadge,
-
         fullscreen_mobile: config.fullscreenMobile,
-
         auto_open: config.autoOpen,
-
         auto_open_delay: config.autoOpenDelay,
       });
-
-      const iframe = document.getElementById(
-        "preview-frame",
-      ) as HTMLIFrameElement;
-
-      iframe?.contentWindow?.postMessage(
-        {
-          type: "UPDATE_WIDGET_CONFIG",
-          payload: config,
-        },
-        "*",
-      );
+      // LivePreview handles the postMessage automatically via its useEffect
     } catch (error) {
       console.error(error);
     } finally {
@@ -291,7 +270,7 @@ export default function Widget() {
             <div className="w-3 h-3 rounded-full bg-green-500" />
           </div>
 
-          <LivePreview />
+          <LivePreview config={config as Record<string, unknown>} />
         </div>
       </div>
     </div>

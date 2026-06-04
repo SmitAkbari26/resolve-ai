@@ -35,6 +35,7 @@ class ChatMessageRequest(BaseModel):
     user_email: str = ""
     message: str
     conversation_id: str | None = None   # None = start new conversation
+    api_key: str | None = None
 
 
 class ChatMessageResponse(BaseModel):
@@ -99,7 +100,9 @@ async def chat_message(
             user_email=payload.user_email,
             user_message=payload.message.strip(),
             conversation_id=payload.conversation_id,
+            api_key=payload.api_key,
         )
+
         return result
 
     except Exception as ex:
@@ -209,6 +212,7 @@ async def websocket_chat(websocket: WebSocket):
             user_email = payload.get("user_email", "")
             message = payload.get("message")
             conversation_id = payload.get("conversation_id")
+            api_key = payload.get("api_key")
 
             if not user_id or not message:
                 await websocket.send_json({"error": "user_id and message are required"})
@@ -232,7 +236,9 @@ async def websocket_chat(websocket: WebSocket):
                         user_message=message.strip(),
                         conversation_id=conversation_id,
                         stream_callback=stream_callback,
+                        api_key=api_key,
                     )
+
                     await db.commit()
                     # Use custom encoder to handle UUID, datetime, etc.
                     import uuid

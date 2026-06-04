@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class ConversationCreate(BaseModel):
     user_id: UUID
+    tenant_id: UUID | None = None
     channel: str = "web_chat"
     sentiment: str = "neutral"
     status: str = "active"
@@ -16,6 +17,7 @@ class ConversationUpdate(BaseModel):
 class ConversationResponse(BaseModel):
     id: UUID
     user_id: UUID
+    tenant_id: UUID | None = None
     channel: str
     sentiment: str
     status: str
@@ -23,3 +25,4 @@ class ConversationResponse(BaseModel):
     updated_at: datetime
     class Config:
         from_attributes = True
+

@@ -35,3 +35,11 @@ class TenantRepository:
     ):
         result = await self.db.execute(select(Tenant).where(Tenant.slug == slug))
         return result.scalar_one_or_none()
+
+    async def get_by_api_key(
+        self,
+        api_key: str,
+    ):
+        result = await self.db.execute(select(Tenant).where(Tenant.api_key == api_key))
+        return result.scalar_one_or_none()
+
