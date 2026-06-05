@@ -165,6 +165,24 @@ export const knowledgeApi = {
     const response = await apiClient.post("/knowledge-documents/ingest");
     return response.data;
   },
+
+  scrapeAndIngest: async (url: string, tenantId: string, title?: string) => {
+    const response = await apiClient.post("/scraper/scrape-and-ingest", {
+      url,
+      tenant_id: tenantId,
+      title,
+    });
+
+    return response.data;
+  },
+
+  scrapeTenantDomains: async (tenantId: string) => {
+    const response = await apiClient.post("/scraper/scrape-tenant-domains", {
+      tenant_id: tenantId,
+    });
+
+    return response.data;
+  },
 };
 
 export const agentApi = {
@@ -250,9 +268,7 @@ export const widgetConfigurationApi = {
   },
 
   async get(tenantId: string) {
-    const response = await apiClient.get(
-      `/widget-configurations/${tenantId}`,
-    );
+    const response = await apiClient.get(`/widget-configurations/${tenantId}`);
 
     return response.data;
   },
@@ -301,10 +317,7 @@ export const tenantApi = {
     tenantId: string,
     request: UpdateTenantRequest,
   ): Promise<Tenant> {
-    const response = await apiClient.put(
-      `/tenants/${tenantId}`,
-      request,
-    );
+    const response = await apiClient.put(`/tenants/${tenantId}`, request);
 
     return response.data;
   },
@@ -320,9 +333,7 @@ export interface WidgetDomain {
 
 export const widgetDomainApi = {
   async getDomains(tenantId: string): Promise<WidgetDomain[]> {
-    const response = await apiClient.get(
-      `/widget-domains/${tenantId}`,
-    );
+    const response = await apiClient.get(`/widget-domains/${tenantId}`);
 
     return response.data;
   },
@@ -337,11 +348,8 @@ export const widgetDomainApi = {
   },
 
   async deleteDomain(domainId: string) {
-    const response = await apiClient.delete(
-      `/widget-domains/${domainId}`,
-    );
+    const response = await apiClient.delete(`/widget-domains/${domainId}`);
 
     return response.data;
   },
 };
-

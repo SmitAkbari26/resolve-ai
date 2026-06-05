@@ -17,13 +17,15 @@ export default function App() {
     const script = document.createElement("script");
     const link = document.createElement("link");
 
-    script.src = "http://127.0.0.1:5500/widget.js";
+    script.src =
+      "https://cdn.jsdelivr.net/gh/SmitAkbari26/resolve-ai@main/resolve-widget/cdn/widget.js";
 
     document.body.appendChild(script);
 
     link.rel = "stylesheet";
 
-    link.href = "http://127.0.0.1:5500/widget.css";
+    link.href =
+      "https://cdn.jsdelivr.net/gh/SmitAkbari26/resolve-ai@main/resolve-widget/cdn/widget.css";
 
     document.head.appendChild(link);
 

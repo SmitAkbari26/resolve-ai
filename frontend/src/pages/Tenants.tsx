@@ -10,7 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 
-import { tenantApi, type Tenant } from "../services/api";
+import { knowledgeApi, tenantApi, type Tenant } from "../services/api";
 
 import { widgetDomainApi, type WidgetDomain } from "../services/api";
 
@@ -24,6 +24,7 @@ export default function Tenants() {
     name: "",
     slug: "",
   });
+  const [scraping, setScraping] = useState(false);
 
   const loadTenants = async () => {
     try {
@@ -34,6 +35,22 @@ export default function Tenants() {
       setTenants(data);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleScrapeTenantDomains = async (tenantId: string) => {
+    try {
+      setScraping(true);
+
+      const result = await knowledgeApi.scrapeTenantDomains(tenantId);
+
+      console.log(`Processed ${result.total_domains} domains`);
+
+      await loadTenants();
+    } catch {
+      console.log("Failed to scrape domains");
+    } finally {
+      setScraping(false);
     }
   };
 
@@ -233,6 +250,34 @@ export default function Tenants() {
                     >
                       Add
                     </button>
+                  </div>
+                  <div className="border-t border-slate-800 pt-6 mt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <Globe size={16} />
+                          RAG Knowledge Base
+                        </h4>
+
+                        <p className="text-sm text-slate-500 mt-1">
+                          Crawl all allowed domains and ingest them into the
+                          tenant knowledge base.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleScrapeTenantDomains(tenant.id)}
+                        disabled={scraping}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          size={16}
+                          className={scraping ? "animate-spin" : ""}
+                        />
+
+                        {scraping ? "Processing..." : "RAG Domains"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

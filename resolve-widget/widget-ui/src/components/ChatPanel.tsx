@@ -1,4 +1,4 @@
-import { Send, Paperclip, Smile } from "lucide-react";
+import { Send, Mic, Smile } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -10,6 +10,7 @@ import MessageBubble from "./MessageBubble";
 import { useResponsive } from "../hooks/useResponsive";
 import { useWidgetConfig } from "../context/WidgetContext";
 import { useChat } from "../hooks/useChat";
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 
 interface Props {
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function ChatPanel({ onClose }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useResponsive();
   const config = useWidgetConfig();
+  const { isListening, startListening, stopListening } = useSpeechRecognition();
 
   const {
     messages,
@@ -62,7 +64,6 @@ export default function ChatPanel({ onClose }: Props) {
             }
       }
     >
-
       {/* Header */}
       <ChatHeader
         connected={connected}
@@ -86,16 +87,25 @@ export default function ChatPanel({ onClose }: Props) {
       {/* Input */}
       <div className="p-3 sm:p-4 border-t bg-white shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 bg-slate-100 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3">
-          <Paperclip
-            size={16}
+          <button
+            onClick={() =>
+              !isListening
+                ? startListening((text) => {
+                    setInput(text);
+                    send();
+                  })
+                : stopListening()
+            }
             className="text-slate-500 cursor-pointer shrink-0 hidden sm:block"
-          />
+          >
+            <Mic size={16} />
+          </button>
 
           <input
             className="flex-1 bg-transparent outline-none text-slate-800 text-sm sm:text-base min-w-0"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything…"
+            placeholder={isListening ? "Listening..." : "Ask anything..."}
             onKeyDown={(e) => {
               if (e.key === "Enter") send();
             }}

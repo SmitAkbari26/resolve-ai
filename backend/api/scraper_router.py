@@ -93,6 +93,7 @@ async def scrape_tenant_domains(payload: ScrapeTenantRequest, db: AsyncSession =
             url = f"https://{domain}" if not domain.startswith("http") else domain
             try:
                 clean_text = await scrape_url(url)
+                print(clean_text)
                 if not clean_text or not clean_text.strip():
                     results.append({"domain": domain, "success": False, "error": "Empty content"})
                     continue

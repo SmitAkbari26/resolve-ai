@@ -1,7 +1,7 @@
-import React from 'react';
-import { Sidebar } from './Sidebar';
-import { Calendar, Server } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Sidebar } from "./Sidebar";
+import { Calendar, Server } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,11 +11,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   useAuth();
   const [isOnline, setIsOnline] = React.useState<boolean | null>(null);
 
-  const currentDateString = new Date().toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
+  const currentDateString = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 
   React.useEffect(() => {
@@ -32,7 +32,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       }
     };
     checkHealth();
-    const timer = setInterval(checkHealth, 8000);
+    const timer = setInterval(checkHealth, 50000);
     return () => clearInterval(timer);
   }, []);
 
@@ -78,12 +78,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Content Viewport */}
         <main className="flex-1 overflow-y-auto p-4">
-          <div className="max-w-8xl mx-auto space-y-8">
-            {children}
-          </div>
+          <div className="max-w-8xl mx-auto space-y-8">{children}</div>
         </main>
       </div>
     </div>
   );
 };
-
